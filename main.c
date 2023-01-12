@@ -1,11 +1,10 @@
 /*  Jumping into paintings is still cool!
     TO DO:
+        Calculate map cells window position and area limits.
         Adjust player position offset.
-            in setupMap:
-                    calculate window x,y coordinates
-                    for each cell. store in data array.
         Collision detection between player and ground.
         Get map size dinamically. */
+
 #include <SDL2/SDL.h>
 #include <stdio.h>
 
@@ -26,13 +25,20 @@ typedef struct{
     int water;
     int startPos;
     int endPos;
-}Tile; Tile tile;
+}Tile;
+
+typedef struct{
+    int mapX;
+    int mapY;
+    int mapLength;
+    int spawnX;
+    int spawnY;
+    int *map;
+    Tile tile;
+}Level; Level level;
 
 SDL_Window * win = NULL;
 SDL_Renderer * rend = NULL;
-
-const int mapX = 16, mapY = 8;
-int spawnPointX, spawnPointY;
 
 int map[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -52,12 +58,13 @@ void display();
 
 /*  Player */
 void playerInit();
-void updatePlayer();
-void drawPlayer();
+void playerUpdate();
+void playerDraw();
 
 /*  Level */
-void setupMap();
-void drawMap();
+void levelInit();
+void mapSetup();
+void mapDraw();
 
 int main(void){
 
@@ -113,8 +120,9 @@ void init(){
     SDL_CreateWindowAndRenderer(SCREEN_W, SCREEN_H, 0, &win, &rend);
     SDL_SetWindowTitle(win, "Raycaster");
 
-    setupMap();
-    p.rect.x = spawnPointX; p.rect.y = spawnPointY;
+    levelInit();
+    mapSetup();
+    p.rect.x = level.spawnX; p.rect.y = level.spawnY;
     p.size = CELL_SIZE / 2;
     p.rect.w = p.size; p.rect.h = p.size;
     p.speed = 5;
@@ -122,43 +130,46 @@ void init(){
 }
 
 void update(){
-    updatePlayer();
+    playerUpdate();
 }
 
 void display(){
     SDL_SetRenderDrawColor(rend, 0, 0, 0, 255);
     SDL_RenderClear(rend);
 
-    drawMap();
-    drawPlayer();
+    mapDraw();
+    playerDraw();
 
     SDL_RenderPresent(rend);
 }
 
-void updatePlayer(){
+void playerUpdate(){
     p.rect.y += p.gravity;
     // if player falls off screen reset pos
-    if(p.rect.y > SCREEN_H){p.rect.x = spawnPointX; p.rect.y = spawnPointX;}
+    if(p.rect.y > SCREEN_H){p.rect.x = level.spawnX; p.rect.y = level.spawnX;}
 }
 
-void drawPlayer(){
+void playerDraw(){
     SDL_SetRenderDrawColor(rend, 200, 125, 0, 255);
     SDL_RenderFillRect(rend, &p.rect);
 }
 
-void setupMap(){
-    tile.empty = 0;
-    tile.ground = 1;
-    tile.water = 2;
-    tile.startPos = 3;
-    tile.endPos = 4;
+void levelInit(){
+    level.tile.empty = 0;
+    level.tile.ground = 1;
+    level.tile.water = 2;
+    level.tile.startPos = 3;
+    level.tile.endPos = 4;
+    level.mapX = 16; level.mapY = 8;
+}
 
+void mapSetup(){
     int cell = 0;
-    for(int i = 0; i < mapY; i++){
-        for(int j = 0; j < mapX; j++){
-            if(map[cell] == tile.startPos){
-                spawnPointX = j * CELL_SIZE + CELL_SIZE / 2;
-                spawnPointY = i * CELL_SIZE + CELL_SIZE / 2;
+    for(int i = 0; i < level.mapY; i++){
+        for(int j = 0; j < level.mapX; j++){
+            if(map[cell] == level.tile.startPos){
+                level.spawnX = j * CELL_SIZE + CELL_SIZE / 2;
+                level.spawnY = i * CELL_SIZE + CELL_SIZE / 2;
                 break;
             }
             cell++;
@@ -166,18 +177,18 @@ void setupMap(){
     }
 }
 
-void drawMap(){
+void mapDraw(){
     SDL_Rect rect = {0, 0, CELL_SIZE, CELL_SIZE};
     int cell = 0;
-    for(int i = 0; i < mapY; i++){
-        for(int j = 0; j < mapX; j++){
-            if(map[cell] == tile.empty){
+    for(int i = 0; i < level.mapY; i++){
+        for(int j = 0; j < level.mapX; j++){
+            if(map[cell] == level.tile.empty){
                 SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
-            }else if(map[cell] == tile.ground){
+            }else if(map[cell] == level.tile.ground){
                 SDL_SetRenderDrawColor(rend, 100, 75, 13, 255);
-            }else if(map[cell] == tile.water){
+            }else if(map[cell] == level.tile.water){
                 SDL_SetRenderDrawColor(rend, 75, 0, 175, 255);
-            }else if(map[cell] == tile.startPos){
+            }else if(map[cell] == level.tile.startPos){
                 SDL_SetRenderDrawColor(rend, 0, 255, 0, 255);
             }
             rect.x = j * CELL_SIZE; rect.y = i * CELL_SIZE;
