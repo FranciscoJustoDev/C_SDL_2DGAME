@@ -12,12 +12,13 @@
 #define SCREEN_H 512
 #define CELL_SIZE 64
 
+SDL_Window * win = NULL;
+SDL_Renderer * rend = NULL;
+
 typedef struct{
-    SDL_Rect rect;
-    int size;
-    int speed;
-    int gravity;
-}Player; Player p;
+    int x;
+    int y;
+}Pos;
 
 typedef struct{
     int empty;
@@ -28,8 +29,7 @@ typedef struct{
 }Tile;
 
 typedef struct{
-    int mapX;
-    int mapY;
+    Pos mapSize;
     int mapLength;
     int spawnX;
     int spawnY;
@@ -37,8 +37,12 @@ typedef struct{
     Tile tile;
 }Level; Level level;
 
-SDL_Window * win = NULL;
-SDL_Renderer * rend = NULL;
+typedef struct{
+    SDL_Rect rect;
+    int size;
+    int speed;
+    int gravity;
+}Player; Player p;
 
 int map[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -160,13 +164,18 @@ void levelInit(){
     level.tile.water = 2;
     level.tile.startPos = 3;
     level.tile.endPos = 4;
-    level.mapX = 16; level.mapY = 8;
+    level.mapSize.x = 16; level.mapSize.y = 8;
+    /*  load map from file
+        get mapX, mapY, mapLength
+        set spawnX, spawnY
+        calculate cells real pos,
+        edge limits and center pos */
 }
 
 void mapSetup(){
     int cell = 0;
-    for(int i = 0; i < level.mapY; i++){
-        for(int j = 0; j < level.mapX; j++){
+    for(int i = 0; i < level.mapSize.y; i++){
+        for(int j = 0; j < level.mapSize.x; j++){
             if(map[cell] == level.tile.startPos){
                 level.spawnX = j * CELL_SIZE + CELL_SIZE / 2;
                 level.spawnY = i * CELL_SIZE + CELL_SIZE / 2;
@@ -180,8 +189,8 @@ void mapSetup(){
 void mapDraw(){
     SDL_Rect rect = {0, 0, CELL_SIZE, CELL_SIZE};
     int cell = 0;
-    for(int i = 0; i < level.mapY; i++){
-        for(int j = 0; j < level.mapX; j++){
+    for(int i = 0; i < level.mapSize.y; i++){
+        for(int j = 0; j < level.mapSize.x; j++){
             if(map[cell] == level.tile.empty){
                 SDL_SetRenderDrawColor(rend, 255, 255, 255, 255);
             }else if(map[cell] == level.tile.ground){
